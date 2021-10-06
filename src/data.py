@@ -49,17 +49,23 @@ class CocoDetection(Dataset):
         anns = self.anns_by_image.get(img_id, [])
         boxes = []
         labels = []
+        areas = []
+        iscrowd = []
         for a in anns:
             x, y, w, h = a["bbox"]
             if w <= 0 or h <= 0:
                 continue
             boxes.append([x, y, x + w, y + h])
             labels.append(a["category_id"])
+            areas.append(a.get("area", w * h))
+            iscrowd.append(a.get("iscrowd", 0))
 
         target = {
             "boxes": torch.tensor(boxes, dtype=torch.float32).reshape(-1, 4),
             "labels": torch.tensor(labels, dtype=torch.int64),
             "image_id": torch.tensor([img_id]),
+            "area": torch.tensor(areas, dtype=torch.float32),
+            "iscrowd": torch.tensor(iscrowd, dtype=torch.int64),
         }
 
         if self.transforms is not None:
