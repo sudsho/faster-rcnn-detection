@@ -66,6 +66,20 @@ def main():
         pred_path = f.name
     print("predictions written to", pred_path)
 
+    try:
+        from pycocotools.coco import COCO
+        from pycocotools.cocoeval import COCOeval
+    except ImportError:
+        print("pycocotools not available; skipping mAP computation")
+        return
+
+    gt = COCO(os.path.join(cfg["dataset"]["root"], "annotations", "val.json"))
+    dt = gt.loadRes(pred_path)
+    coco_eval = COCOeval(gt, dt, "bbox")
+    coco_eval.evaluate()
+    coco_eval.accumulate()
+    coco_eval.summarize()
+
 
 if __name__ == "__main__":
     main()
