@@ -10,9 +10,10 @@ import torch
 import yaml
 
 from .data import CocoDetection
+from .engine import train_one_epoch
 from .model import build_model
 from .transforms import AlbumentationsAdapter
-from .utils import collate_fn, ensure_dir, set_seed, device_from_cfg, to_device
+from .utils import collate_fn, ensure_dir, set_seed, device_from_cfg
 
 
 def parse_args():
@@ -56,19 +57,13 @@ def main():
         step_size=cfg["train"]["lr_step_size"],
         gamma=cfg["train"]["lr_gamma"],
     )
+    scaler = torch.cuda.amp.GradScaler() if cfg["train"].get("amp") else None
 
     for epoch in range(cfg["train"]["epochs"]):
-        model.train()
-        for i, (images, targets) in enumerate(train_loader):
-            images = [img.to(device) for img in images]
-            targets = [to_device(t, device) for t in targets]
-            loss_dict = model(images, targets)
-            loss = sum(loss_dict.values())
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            if i % cfg["train"]["print_freq"] == 0:
-                print(f"epoch {epoch} iter {i} loss {loss.item():.4f}")
+        train_one_epoch(
+            model, optimizer, train_loader, device, epoch,
+            print_freq=cfg["train"]["print_freq"], scaler=scaler,
+        )
         lr_scheduler.step()
         ckpt_path = os.path.join(cfg["paths"]["ckpt_dir"], f"epoch_{epoch}.pt")
         torch.save(model.state_dict(), ckpt_path)
