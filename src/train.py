@@ -51,6 +51,11 @@ def main():
         momentum=cfg["train"]["momentum"],
         weight_decay=cfg["train"]["weight_decay"],
     )
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(
+        optimizer,
+        step_size=cfg["train"]["lr_step_size"],
+        gamma=cfg["train"]["lr_gamma"],
+    )
 
     for epoch in range(cfg["train"]["epochs"]):
         model.train()
@@ -64,6 +69,7 @@ def main():
             optimizer.step()
             if i % cfg["train"]["print_freq"] == 0:
                 print(f"epoch {epoch} iter {i} loss {loss.item():.4f}")
+        lr_scheduler.step()
         ckpt_path = os.path.join(cfg["paths"]["ckpt_dir"], f"epoch_{epoch}.pt")
         torch.save(model.state_dict(), ckpt_path)
 
