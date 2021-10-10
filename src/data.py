@@ -21,7 +21,7 @@ from torch.utils.data import Dataset
 
 
 class CocoDetection(Dataset):
-    def __init__(self, root, ann_file, transforms=None):
+    def __init__(self, root, ann_file, transforms=None, drop_empty=False):
         self.root = root
         self.transforms = transforms
 
@@ -29,13 +29,17 @@ class CocoDetection(Dataset):
             coco = json.load(f)
 
         self.images = {im["id"]: im for im in coco["images"]}
-        self.image_ids = sorted(self.images.keys())
         self.categories = {c["id"]: c["name"] for c in coco["categories"]}
 
         anns_by_image = defaultdict(list)
         for ann in coco["annotations"]:
             anns_by_image[ann["image_id"]].append(ann)
         self.anns_by_image = anns_by_image
+
+        ids = sorted(self.images.keys())
+        if drop_empty:
+            ids = [i for i in ids if anns_by_image.get(i)]
+        self.image_ids = ids
 
     def __len__(self):
         return len(self.image_ids)
