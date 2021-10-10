@@ -1,0 +1,65 @@
+# Open Images subset config.
+#
+# To prepare data: download a class subset using the OpenImages downloader
+# script (oid_v4_toolkit) into data/oi/, then use scripts/oi_to_coco.py to
+# emit a COCO-style annotations json into data/oi/annotations/.
+seed: 42
+device: cuda
+
+dataset:
+  name: open_images
+  root: data/oi
+  num_classes: 11  # 10 classes + background
+  classes:
+    - person
+    - car
+    - chair
+    - dog
+    - cat
+    - book
+    - bottle
+    - laptop
+    - tv
+    - phone
+
+model:
+  backbone: resnet50_fpn
+  pretrained: true
+  num_classes: 11
+  trainable_backbone_layers: 3
+
+train:
+  epochs: 10
+  batch_size: 4
+  num_workers: 4
+  lr: 0.005
+  momentum: 0.9
+  weight_decay: 0.0005
+  lr_step_size: 7
+  lr_gamma: 0.1
+  print_freq: 50
+  amp: true
+  warmup_iters: 1000
+  warmup_factor: 0.001
+
+eval:
+  iou_thresh: 0.5
+  score_thresh: 0.05
+  nms_thresh: 0.5
+  max_detections: 100
+
+augment:
+  hflip: 0.5
+  resize_min: 600
+  resize_max: 1000
+  brightness: 0.2
+  contrast: 0.2
+
+paths:
+  output_dir: outputs/oi
+  ckpt_dir: checkpoints/oi
+
+mlflow:
+  enable: true
+  experiment: faster-rcnn-openimages
+  tracking_uri: file:./mlruns
