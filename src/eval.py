@@ -19,6 +19,8 @@ def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/voc.yaml")
     ap.add_argument("--weights", required=True)
+    ap.add_argument("--batch-size", type=int, default=2)
+    ap.add_argument("--num-workers", type=int, default=2)
     return ap.parse_args()
 
 
@@ -52,7 +54,8 @@ def main():
         os.path.join(cfg["dataset"]["root"], "annotations", "val.json"),
     )
     loader = torch.utils.data.DataLoader(
-        val_ds, batch_size=2, shuffle=False, num_workers=2, collate_fn=collate_fn
+        val_ds, batch_size=args.batch_size, shuffle=False,
+        num_workers=args.num_workers, collate_fn=collate_fn,
     )
     model = build_model(cfg["model"]["num_classes"], pretrained=False)
     model.load_state_dict(torch.load(args.weights, map_location=device))
