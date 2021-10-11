@@ -14,16 +14,17 @@ except ImportError:
     _HAS_ALB = False
 
 
-def _alb_train(min_size=600, max_size=1000):
+def _alb_train(min_size=600, max_size=1000, hflip=0.5, brightness=0.2, contrast=0.2):
     return A.Compose(
         [
             A.LongestMaxSize(max_size=max_size),
             A.PadIfNeeded(min_height=min_size, min_width=min_size, border_mode=0),
-            A.HorizontalFlip(p=0.5),
-            A.RandomBrightnessContrast(p=0.2),
+            A.HorizontalFlip(p=hflip),
+            A.RandomBrightnessContrast(brightness_limit=brightness, contrast_limit=contrast, p=0.5),
+            A.MotionBlur(p=0.1),
             ToTensorV2(),
         ],
-        bbox_params=A.BboxParams(format="pascal_voc", label_fields=["labels"]),
+        bbox_params=A.BboxParams(format="pascal_voc", label_fields=["labels"], min_visibility=0.1),
     )
 
 
