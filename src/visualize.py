@@ -32,7 +32,12 @@ def draw_boxes(image, boxes, labels, scores, classes=None, score_thresh=0.0):
         draw.rectangle([x1, y1, x2, y2], outline=color, width=2)
         name = classes[int(label) - 1] if classes else str(label)
         text = f"{name} {score:.2f}"
-        tw, th = draw.textsize(text, font=font) if hasattr(draw, "textsize") else (60, 14)
-        draw.rectangle([x1, y1 - th - 2, x1 + tw + 4, y1], fill=color)
-        draw.text((x1 + 2, y1 - th - 2), text, fill=(255, 255, 255), font=font)
+        try:
+            tw, th = draw.textsize(text, font=font)
+        except AttributeError:
+            bbox = draw.textbbox((0, 0), text, font=font)
+            tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        ty = max(0, y1 - th - 2)
+        draw.rectangle([x1, ty, x1 + tw + 4, ty + th + 2], fill=color)
+        draw.text((x1 + 2, ty), text, fill=(255, 255, 255), font=font)
     return img
