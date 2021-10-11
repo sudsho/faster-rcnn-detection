@@ -1,8 +1,17 @@
 """Small misc helpers shared across modules."""
+import logging
 import os
 import random
 import numpy as np
 import torch
+
+
+logger = logging.getLogger("faster_rcnn")
+if not logger.handlers:
+    h = logging.StreamHandler()
+    h.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s", "%H:%M:%S"))
+    logger.addHandler(h)
+    logger.setLevel(logging.INFO)
 
 
 def collate_fn(batch):
