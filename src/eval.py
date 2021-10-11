@@ -61,24 +61,14 @@ def main():
     model.to(device)
 
     results = run_eval(model, loader, device)
-    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
-        json.dump(results, f)
-        pred_path = f.name
-    print("predictions written to", pred_path)
-
+    gt_path = os.path.join(cfg["dataset"]["root"], "annotations", "val.json")
     try:
-        from pycocotools.coco import COCO
-        from pycocotools.cocoeval import COCOeval
+        from .coco_eval import evaluate
+        metrics = evaluate(gt_path, results)
+        for k, v in metrics.items():
+            print(f"  {k}: {v:.4f}")
     except ImportError:
         print("pycocotools not available; skipping mAP computation")
-        return
-
-    gt = COCO(os.path.join(cfg["dataset"]["root"], "annotations", "val.json"))
-    dt = gt.loadRes(pred_path)
-    coco_eval = COCOeval(gt, dt, "bbox")
-    coco_eval.evaluate()
-    coco_eval.accumulate()
-    coco_eval.summarize()
 
 
 if __name__ == "__main__":
