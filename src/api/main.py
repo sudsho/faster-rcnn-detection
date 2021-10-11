@@ -7,7 +7,6 @@ Endpoints:
 """
 import io
 import os
-from typing import List
 
 import torch
 import torchvision.transforms.functional as F
@@ -15,28 +14,15 @@ import yaml
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import StreamingResponse
 from PIL import Image
-from pydantic import BaseModel
 
 from ..model import build_model
 from ..utils import device_from_cfg
 from ..visualize import draw_boxes
+from .schemas import PredictResponse
 
 
 CFG_PATH = os.environ.get("FRCNN_CONFIG", "configs/voc.yaml")
 WEIGHTS = os.environ.get("FRCNN_WEIGHTS", "checkpoints/best.pt")
-
-
-class Detection(BaseModel):
-    box: List[float]
-    label: int
-    label_name: str
-    score: float
-
-
-class PredictResponse(BaseModel):
-    detections: List[Detection]
-    width: int
-    height: int
 
 
 app = FastAPI(title="faster-rcnn-detection")
