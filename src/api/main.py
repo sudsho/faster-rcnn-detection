@@ -60,7 +60,14 @@ def _load():
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    if _state["model"] is None:
+        return {"status": "starting"}
+    return {"status": "ok", "device": str(_state["device"]), "num_classes": _state["cfg"]["model"]["num_classes"]}
+
+
+@app.get("/classes")
+def classes():
+    return {"classes": _state["classes"] or []}
 
 
 def _detect(img):
