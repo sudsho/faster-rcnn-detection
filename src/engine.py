@@ -6,7 +6,7 @@ import time
 
 import torch
 
-from .utils import to_device
+from .utils import logger, to_device
 
 
 def warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor):
@@ -34,7 +34,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,
             loss_dict = model(images, targets)
             loss = sum(loss_dict.values())
         if not math.isfinite(loss.item()):
-            print("non-finite loss, skipping iter", i)
+            logger.warning("non-finite loss, skipping iter %d", i)
             optimizer.zero_grad()
             continue
 
@@ -54,7 +54,8 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch,
         running["n"] += 1
         if i % print_freq == 0:
             avg = running["loss"] / max(running["n"], 1)
-            print(f"epoch {epoch} iter {i}/{len(data_loader)} loss {loss.item():.4f} avg {avg:.4f}")
+            logger.info("epoch %d iter %d/%d loss %.4f avg %.4f", epoch, i, len(data_loader), loss.item(), avg)
     elapsed = time.time() - start
-    print(f"epoch {epoch} done in {elapsed:.1f}s avg loss {running['loss']/max(running['n'],1):.4f}")
-    return running["loss"] / max(running["n"], 1)
+    avg = running["loss"] / max(running["n"], 1)
+    logger.info("epoch %d done in %.1fs avg loss %.4f", epoch, elapsed, avg)
+    return avg
