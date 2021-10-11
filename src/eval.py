@@ -4,9 +4,7 @@ Computes mAP metrics on a validation split. Heavy lifting is done by
 pycocotools (the same library COCO uses for the official metric).
 """
 import argparse
-import json
 import os
-import tempfile
 
 import torch
 import yaml
@@ -14,7 +12,7 @@ from tqdm import tqdm
 
 from .data import CocoDetection
 from .model import build_model
-from .utils import collate_fn, device_from_cfg, to_device
+from .utils import collate_fn, device_from_cfg
 
 
 def parse_args():
