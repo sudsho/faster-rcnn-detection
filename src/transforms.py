@@ -36,10 +36,10 @@ def _alb_val(max_size=1000):
 
 
 class AlbumentationsAdapter:
-    def __init__(self, train=True):
+    def __init__(self, train=True, **kwargs):
         if not _HAS_ALB:
             raise ImportError("albumentations is required")
-        self.transform = _alb_train() if train else _alb_val()
+        self.transform = _alb_train(**kwargs) if train else _alb_val(**kwargs)
 
     def __call__(self, img, target):
         arr = np.array(img)
@@ -50,6 +50,15 @@ class AlbumentationsAdapter:
         )
         img_t = out["image"].float() / 255.0
         target = dict(target)
-        target["boxes"] = torch.tensor(out["bboxes"], dtype=torch.float32).reshape(-1, 4)
-        target["labels"] = torch.tensor(out["labels"], dtype=torch.int64)
+        boxes = torch.tensor(out["bboxes"], dtype=torch.float32).reshape(-1, 4)
+        labels = torch.tensor(out["labels"], dtype=torch.int64)
+        # rebuild area; iscrowd stays as-is (assume 0 for surviving boxes)
+        if boxes.numel() > 0:
+            area = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
+        else:
+            area = torch.zeros(0)
+        target["boxes"] = boxes
+        target["labels"] = labels
+        target["area"] = area
+        target["iscrowd"] = torch.zeros(labels.shape[0], dtype=torch.int64)
         return img_t, target
