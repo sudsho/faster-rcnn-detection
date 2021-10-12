@@ -1,6 +1,5 @@
 """Single-image inference."""
 import argparse
-import os
 
 import torch
 import yaml
@@ -9,6 +8,7 @@ import torchvision.transforms.functional as F
 
 from .model import build_model
 from .utils import device_from_cfg
+from .visualize import draw_boxes
 
 
 def load_model(cfg, weights_path, device):
@@ -38,14 +38,21 @@ def main():
     ap.add_argument("--weights", required=True)
     ap.add_argument("--image", required=True)
     ap.add_argument("--score-thresh", type=float, default=0.5)
+    ap.add_argument("--save", default=None, help="path to save annotated image")
     args = ap.parse_args()
 
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
     device = device_from_cfg(cfg)
     model = load_model(cfg, args.weights, device)
-    result, _ = predict_image(model, args.image, device, args.score_thresh)
+    result, img = predict_image(model, args.image, device, args.score_thresh)
     print(result)
+    if args.save:
+        classes = cfg.get("dataset", {}).get("classes")
+        out_img = draw_boxes(img, result["boxes"], result["labels"], result["scores"],
+                             classes=classes, score_thresh=args.score_thresh)
+        out_img.save(args.save)
+        print("saved", args.save)
 
 
 if __name__ == "__main__":
