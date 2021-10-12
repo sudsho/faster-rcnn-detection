@@ -1,0 +1,52 @@
+# Small COCO subset (a few categories) - useful for sanity training runs.
+seed: 42
+device: cuda
+
+dataset:
+  name: coco_subset
+  root: data/coco
+  num_classes: 4  # 3 categories + background
+  classes:
+    - person
+    - bicycle
+    - car
+
+model:
+  backbone: resnet50_fpn
+  pretrained: true
+  num_classes: 4
+  trainable_backbone_layers: 3
+
+train:
+  epochs: 6
+  batch_size: 4
+  num_workers: 4
+  lr: 0.005
+  momentum: 0.9
+  weight_decay: 0.0005
+  lr_step_size: 4
+  lr_gamma: 0.1
+  print_freq: 50
+  amp: true
+  warmup_iters: 500
+  warmup_factor: 0.001
+
+eval:
+  iou_thresh: 0.5
+  score_thresh: 0.05
+  nms_thresh: 0.5
+  max_detections: 100
+
+augment:
+  hflip: 0.5
+  resize_min: 600
+  resize_max: 1000
+
+paths:
+  output_dir: outputs/coco_subset
+  ckpt_dir: checkpoints/coco_subset
+
+mlflow:
+  enable: true
+  experiment: faster-rcnn-coco-subset
+  tracking_uri: file:./mlruns
