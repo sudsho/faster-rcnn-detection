@@ -44,6 +44,9 @@ class CocoDetection(Dataset):
     def __len__(self):
         return len(self.image_ids)
 
+    def get_categories(self):
+        return [self.categories[k] for k in sorted(self.categories.keys())]
+
     def __getitem__(self, idx):
         img_id = self.image_ids[idx]
         im_meta = self.images[img_id]
