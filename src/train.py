@@ -32,6 +32,24 @@ def main():
     set_seed(cfg.get("seed", 42))
     device = device_from_cfg(cfg)
     ensure_dir(cfg["paths"]["ckpt_dir"])
+    ensure_dir(cfg["paths"]["output_dir"])
+
+    use_mlflow = cfg.get("mlflow", {}).get("enable", False)
+    if use_mlflow:
+        try:
+            import mlflow
+            mlflow.set_tracking_uri(cfg["mlflow"].get("tracking_uri", "file:./mlruns"))
+            mlflow.set_experiment(cfg["mlflow"].get("experiment", "faster-rcnn"))
+            mlflow.start_run()
+            mlflow.log_params({
+                "lr": cfg["train"]["lr"],
+                "batch_size": cfg["train"]["batch_size"],
+                "backbone": cfg["model"]["backbone"],
+                "num_classes": cfg["model"]["num_classes"],
+            })
+        except ImportError:
+            logger.warning("mlflow requested but not installed")
+            use_mlflow = False
 
     train_ds = CocoDetection(
         cfg["dataset"]["root"],
@@ -100,11 +118,18 @@ def main():
         metrics = coco_eval(gt_path, preds)
         m = metrics["mAP@0.5:0.95"]
         logger.info("epoch %d val mAP@.5:.95=%.4f", epoch, m)
+        if use_mlflow:
+            import mlflow
+            mlflow.log_metrics({k: v for k, v in metrics.items()}, step=epoch)
         if m > best_map:
             best_map = m
             best_path = os.path.join(cfg["paths"]["ckpt_dir"], "best.pt")
             torch.save(model.state_dict(), best_path)
             logger.info("new best %.4f, saved %s", m, best_path)
+
+    if use_mlflow:
+        import mlflow
+        mlflow.end_run()
 
 
 if __name__ == "__main__":
