@@ -4,16 +4,18 @@ Loads config, builds model + dataset, runs the training loop and saves
 the best checkpoint.
 """
 import argparse
+import math
 import os
 
 import torch
 import yaml
 
+from .coco_eval import evaluate as coco_eval
 from .data import CocoDetection
 from .engine import train_one_epoch
 from .model import build_model
 from .transforms import AlbumentationsAdapter
-from .utils import collate_fn, ensure_dir, set_seed, device_from_cfg
+from .utils import collate_fn, ensure_dir, set_seed, device_from_cfg, logger, to_device
 
 
 def parse_args():
@@ -36,12 +38,20 @@ def main():
         os.path.join(cfg["dataset"]["root"], "annotations", "train.json"),
         transforms=AlbumentationsAdapter(train=True),
     )
+    val_ds = CocoDetection(
+        cfg["dataset"]["root"],
+        os.path.join(cfg["dataset"]["root"], "annotations", "val.json"),
+        transforms=AlbumentationsAdapter(train=False),
+    )
     train_loader = torch.utils.data.DataLoader(
         train_ds,
         batch_size=cfg["train"]["batch_size"],
         shuffle=True,
         num_workers=cfg["train"]["num_workers"],
         collate_fn=collate_fn,
+    )
+    val_loader = torch.utils.data.DataLoader(
+        val_ds, batch_size=2, shuffle=False, num_workers=2, collate_fn=collate_fn,
     )
 
     model = build_model(cfg["model"]["num_classes"]).to(device)
@@ -59,6 +69,7 @@ def main():
     )
     scaler = torch.cuda.amp.GradScaler() if cfg["train"].get("amp") else None
 
+    best_map = -math.inf
     for epoch in range(cfg["train"]["epochs"]):
         train_one_epoch(
             model, optimizer, train_loader, device, epoch,
@@ -67,6 +78,33 @@ def main():
         lr_scheduler.step()
         ckpt_path = os.path.join(cfg["paths"]["ckpt_dir"], f"epoch_{epoch}.pt")
         torch.save(model.state_dict(), ckpt_path)
+
+        # validate at the end of each epoch
+        model.eval()
+        preds = []
+        for images, targets in val_loader:
+            images = [img.to(device) for img in images]
+            with torch.no_grad():
+                outputs = model(images)
+            for tgt, out in zip(targets, outputs):
+                image_id = int(tgt["image_id"].item())
+                for box, label, score in zip(out["boxes"], out["labels"], out["scores"]):
+                    x1, y1, x2, y2 = box.cpu().tolist()
+                    preds.append({
+                        "image_id": image_id,
+                        "category_id": int(label.item()),
+                        "bbox": [x1, y1, x2 - x1, y2 - y1],
+                        "score": float(score.item()),
+                    })
+        gt_path = os.path.join(cfg["dataset"]["root"], "annotations", "val.json")
+        metrics = coco_eval(gt_path, preds)
+        m = metrics["mAP@0.5:0.95"]
+        logger.info("epoch %d val mAP@.5:.95=%.4f", epoch, m)
+        if m > best_map:
+            best_map = m
+            best_path = os.path.join(cfg["paths"]["ckpt_dir"], "best.pt")
+            torch.save(model.state_dict(), best_path)
+            logger.info("new best %.4f, saved %s", m, best_path)
 
 
 if __name__ == "__main__":
