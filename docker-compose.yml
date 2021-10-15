@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  api:
+    build: .
+    container_name: faster-rcnn-api
+    ports:
+      - "8000:8000"
+    environment:
+      FRCNN_CONFIG: configs/voc.yaml
+      FRCNN_WEIGHTS: /app/checkpoints/best.pt
+    volumes:
+      - ./checkpoints:/app/checkpoints:ro
+      - ./data:/app/data:ro
+    restart: unless-stopped
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v1.20.2
+    container_name: faster-rcnn-mlflow
+    ports:
+      - "5000:5000"
+    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:///mlflow.db --default-artifact-root /mlflow-artifacts
+    volumes:
+      - mlflow-data:/mlflow
+      - mlflow-artifacts:/mlflow-artifacts
+
+volumes:
+  mlflow-data:
+  mlflow-artifacts:
