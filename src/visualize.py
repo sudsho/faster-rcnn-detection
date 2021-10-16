@@ -15,12 +15,25 @@ def _color_for(label):
     return PALETTE[(label - 1) % len(PALETTE)]
 
 
-def draw_boxes(image, boxes, labels, scores, classes=None, score_thresh=0.0):
-    """Return a copy of the PIL image with boxes drawn."""
+def draw_boxes(image, boxes, labels, scores, classes=None, score_thresh=0.0,
+               width=2, font_size=14):
+    """Return a copy of the PIL image with boxes drawn.
+
+    Parameters
+    ----------
+    image : PIL.Image
+    boxes : list of [x1, y1, x2, y2]
+    labels : list of int (1-indexed; background is 0 and never drawn)
+    scores : list of float
+    classes : optional list of class names; if given, ``classes[label-1]`` is shown.
+    score_thresh : skip detections below this score
+    width : int, line width
+    font_size : int
+    """
     img = image.copy()
     draw = ImageDraw.Draw(img)
     try:
-        font = ImageFont.truetype("arial.ttf", 14)
+        font = ImageFont.truetype("arial.ttf", font_size)
     except Exception:
         font = ImageFont.load_default()
 
@@ -29,7 +42,7 @@ def draw_boxes(image, boxes, labels, scores, classes=None, score_thresh=0.0):
             continue
         x1, y1, x2, y2 = [float(v) for v in box]
         color = _color_for(int(label))
-        draw.rectangle([x1, y1, x2, y2], outline=color, width=2)
+        draw.rectangle([x1, y1, x2, y2], outline=color, width=width)
         name = classes[int(label) - 1] if classes else str(label)
         text = f"{name} {score:.2f}"
         try:
