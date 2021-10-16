@@ -37,6 +37,17 @@ augment:
   hflip: 0.5
   resize_min: 600
   resize_max: 1000
+  brightness: 0.2
+  contrast: 0.2
+
+# anchors are mostly fine at torchvision defaults; expose for tuning
+rpn:
+  pre_nms_top_n_train: 2000
+  pre_nms_top_n_test: 1000
+  post_nms_top_n_train: 2000
+  post_nms_top_n_test: 1000
+  fg_iou_thresh: 0.7
+  bg_iou_thresh: 0.3
 
 paths:
   output_dir: outputs/
