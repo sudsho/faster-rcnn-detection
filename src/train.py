@@ -21,6 +21,9 @@ from .utils import collate_fn, ensure_dir, set_seed, device_from_cfg, logger, to
 def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/default.yaml")
+    ap.add_argument("--resume", default=None, help="resume from checkpoint")
+    ap.add_argument("--epochs", type=int, default=None, help="override epochs")
+    ap.add_argument("--lr", type=float, default=None, help="override lr")
     return ap.parse_args()
 
 
@@ -28,6 +31,10 @@ def main():
     args = parse_args()
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
+    if args.epochs is not None:
+        cfg["train"]["epochs"] = args.epochs
+    if args.lr is not None:
+        cfg["train"]["lr"] = args.lr
 
     set_seed(cfg.get("seed", 42))
     device = device_from_cfg(cfg)
@@ -73,6 +80,9 @@ def main():
     )
 
     model = build_model(cfg["model"]["num_classes"]).to(device)
+    if args.resume:
+        logger.info("resuming from %s", args.resume)
+        model.load_state_dict(torch.load(args.resume, map_location=device))
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(
         params,
