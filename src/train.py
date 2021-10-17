@@ -74,9 +74,11 @@ def main():
         shuffle=True,
         num_workers=cfg["train"]["num_workers"],
         collate_fn=collate_fn,
+        pin_memory=True,
     )
     val_loader = torch.utils.data.DataLoader(
-        val_ds, batch_size=2, shuffle=False, num_workers=2, collate_fn=collate_fn,
+        val_ds, batch_size=2, shuffle=False, num_workers=2,
+        collate_fn=collate_fn, pin_memory=True,
     )
 
     model = build_model(cfg["model"]["num_classes"]).to(device)
