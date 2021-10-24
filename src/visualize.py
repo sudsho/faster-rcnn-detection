@@ -16,7 +16,7 @@ def _color_for(label):
 
 
 def draw_boxes(image, boxes, labels, scores, classes=None, score_thresh=0.0,
-               width=2, font_size=14):
+               width=2, font_size=14):  # noqa: D401
     """Return a copy of the PIL image with boxes drawn.
 
     Parameters
@@ -41,6 +41,11 @@ def draw_boxes(image, boxes, labels, scores, classes=None, score_thresh=0.0,
         if score < score_thresh:
             continue
         x1, y1, x2, y2 = [float(v) for v in box]
+        # ensure x1<=x2 and y1<=y2 to avoid PIL "negative coords" weirdness
+        if x2 < x1:
+            x1, x2 = x2, x1
+        if y2 < y1:
+            y1, y2 = y2, y1
         color = _color_for(int(label))
         draw.rectangle([x1, y1, x2, y2], outline=color, width=width)
         name = classes[int(label) - 1] if classes else str(label)
