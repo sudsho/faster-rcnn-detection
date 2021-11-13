@@ -25,7 +25,7 @@ class Inferencer:
             logger.info("loading weights from %s", weights_path)
             self.model.load_state_dict(torch.load(weights_path, map_location=self.device))
         else:
-            logger.warning("no weights found at %s, running with COCO init", weights_path)
+            logger.warning("no weights found at %s, running with random init", weights_path)
         self.model.to(self.device).eval()
         self.classes = self.cfg.get("dataset", {}).get("classes")
 

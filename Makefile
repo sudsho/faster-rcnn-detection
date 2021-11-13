@@ -1,4 +1,4 @@
-.PHONY: install dev train eval predict api test lint docker clean
+.PHONY: install dev train predict api test lint docker clean
 
 install:
 	pip install -r requirements.txt
@@ -8,9 +8,6 @@ dev: install
 
 train:
 	python -m src.train --config configs/voc.yaml
-
-eval:
-	python -m src.eval --config configs/voc.yaml --weights checkpoints/voc/best.pt
 
 predict:
 	python -m src.predict --image samples/test.jpg --weights checkpoints/voc/best.pt --save out.jpg

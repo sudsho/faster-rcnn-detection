@@ -24,9 +24,7 @@ dataset:
 
 model:
   backbone: resnet50_fpn
-  pretrained: true
   num_classes: 11
-  trainable_backbone_layers: 3
 
 train:
   epochs: 10
@@ -39,21 +37,6 @@ train:
   lr_gamma: 0.1
   print_freq: 50
   amp: true
-  warmup_iters: 1000
-  warmup_factor: 0.001
-
-eval:
-  iou_thresh: 0.5
-  score_thresh: 0.05
-  nms_thresh: 0.5
-  max_detections: 100
-
-augment:
-  hflip: 0.5
-  resize_min: 600
-  resize_max: 1000
-  brightness: 0.2
-  contrast: 0.2
 
 paths:
   output_dir: outputs/oi
