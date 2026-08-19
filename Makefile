@@ -1,10 +1,13 @@
-.PHONY: install dev train predict api test lint docker clean
+.PHONY: install dev smoke train predict api test lint docker clean
 
 install:
 	pip install -r requirements.txt
 
 dev: install
 	pip install pytest flake8
+
+smoke:
+	python scripts/smoke.py
 
 train:
 	python -m src.train --config configs/voc.yaml

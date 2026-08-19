@@ -5,6 +5,55 @@ backbone (torchvision). Configured for Pascal VOC 2007 by default; the
 loader also reads any COCO-format annotation set (Open Images, Roboflow
 exports, your own labels).
 
+## Quick start (tiny-CPU smoke, no GPU/download)
+
+Prove the train and inference plumbing end to end in a couple of minutes on
+a laptop CPU, with no dataset, no checkpoints and no network access. The
+smoke builds the torchvision Faster R-CNN from random init (`pretrained=False`,
+so no COCO or ImageNet weights are downloaded), synthesizes a few 128x128
+images by drawing colored rectangles and recording their boxes, takes a few
+SGD steps so the training loss falls, then runs eval-mode inference and
+checks the output structure.
+
+```bash
+python scripts/smoke.py     # or: make smoke
+```
+
+Real output from a CPU run (torchvision 0.20.1, Python 3.11):
+
+```
+torch 2.5.1+cu121  device=cpu
+synthetic batch: 4 images 128x128, 7 boxes, classes [1, 2]
+loss components: {'loss_classifier': 1.3989, 'loss_box_reg': 0.0971, 'loss_objectness': 0.7153, 'loss_rpn_box_reg': 0.0223}
+  step  0  total_loss 2.2337
+  step  5  total_loss 0.7586
+  step 10  total_loss 0.4393
+  step 15  total_loss 0.4139
+  step 20  total_loss 0.3147
+  step 25  total_loss 0.2934
+  step 29  total_loss 0.2377
+train-mode loss: 2.2337 -> 0.2377
+eval-mode inference: 0 raw detections, boxes(0, 4) labels(0,) scores(0,)
+SMOKE OK
+```
+
+(Zero raw detections is expected: a randomly initialized model trained for
+30 steps has no confident proposals to keep after NMS; what the smoke checks
+is that the loss decreases and the eval output has correctly shaped
+`boxes`/`labels`/`scores` tensors.)
+
+The unit tests exercise the same code paths (model head swap, dataset loader,
+box drawing, FastAPI endpoints) and run in seconds:
+
+```bash
+python -m pytest -q     # 16 passed
+```
+
+This smoke only proves the code runs. The real headline (Pascal VOC / COCO
+mAP) needs a GPU and a real dataset plus the COCO/ImageNet pretrained
+weights that `build_model(pretrained=True)` downloads; those paths are
+guarded so the smoke never touches the network.
+
 ## Problem
 
 Given an image, draw a tight bounding box around each object of interest and
